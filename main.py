@@ -4,8 +4,6 @@ import discord
 from discord.ext import commands
 import asyncio
 import os
-import time
-import traceback
 
 # ---------------------------
 # Keep-alive server
@@ -43,7 +41,7 @@ OWNER_ID = int(os.environ['OWNER_ID'])
 
 @bot.event
 async def on_ready():
-    print(f"Bot is ready as {bot.user}")
+    print(f"✅ Bot is ready as {bot.user}")
 
 @bot.event
 async def on_raw_reaction_add(payload):
@@ -54,10 +52,14 @@ async def on_raw_reaction_add(payload):
 
     guild = bot.get_guild(payload.guild_id)
     user = guild.get_member(payload.user_id)
-    if user.bot:
+    if not guild or not user or user.bot:
         return
 
     category = discord.utils.get(guild.categories, id=CATEGORY_ID)
+    if not category:
+        print("❌ Category not found.")
+        return
+
     overwrites = {
         guild.default_role: discord.PermissionOverwrite(read_messages=False),
         user: discord.PermissionOverwrite(read_messages=True, send_messages=True),
@@ -69,20 +71,15 @@ async def on_raw_reaction_add(payload):
     private_channel = await guild.create_text_channel(name=channel_name, overwrites=overwrites, category=category)
     await private_channel.send(f"Hey <@{user.id}>! Welcome — let me know which channel you're looking to unlock 🔓")
 
-    # Auto-delete after 2 days (172800 seconds)
+    # Auto-delete after 2 days
     await asyncio.sleep(172800)
-    await private_channel.delete()
+    try:
+        await private_channel.delete()
+    except discord.NotFound:
+        pass
 
 # ---------------------------
-# Keep alive + Auto-restart loop
+# Start bot
 # ---------------------------
 keep_alive()
-
-while True:
-    try:
-        bot.run(TOKEN)
-    except Exception as e:
-        print("Bot crashed with error:")
-        traceback.print_exc()
-        print("Restarting in 5 seconds...")
-        time.sleep(5)
+bot.run(TOKEN)

@@ -1,6 +1,15 @@
 from flask import Flask
 from threading import Thread
+import discord
+from discord.ext import commands
+import asyncio
+import os
+import time
+import traceback
 
+# ---------------------------
+# Keep-alive server
+# ---------------------------
 app = Flask('')
 
 @app.route('/')
@@ -13,12 +22,10 @@ def run():
 def keep_alive():
     t = Thread(target=run)
     t.start()
-    
-import discord
-from discord.ext import commands
-import asyncio
-import os
 
+# ---------------------------
+# Discord bot setup
+# ---------------------------
 intents = discord.Intents.default()
 intents.members = True
 intents.message_content = True
@@ -27,7 +34,7 @@ intents.guilds = True
 
 bot = commands.Bot(command_prefix="!", intents=intents)
 
-# Load secrets
+# Load secrets from environment
 TOKEN = os.environ['BOT_TOKEN']
 MESSAGE_ID = int(os.environ['MESSAGE_ID'])
 CHANNEL_ID = int(os.environ['CHANNEL_ID'])
@@ -66,5 +73,16 @@ async def on_raw_reaction_add(payload):
     await asyncio.sleep(172800)
     await private_channel.delete()
 
+# ---------------------------
+# Keep alive + Auto-restart loop
+# ---------------------------
 keep_alive()
-bot.run(TOKEN)
+
+while True:
+    try:
+        bot.run(TOKEN)
+    except Exception as e:
+        print("Bot crashed with error:")
+        traceback.print_exc()
+        print("Restarting in 5 seconds...")
+        time.sleep(5)

@@ -129,7 +129,7 @@ async def run_bot():
             print(f"❌ Bot crashed: {e}")
             traceback.print_exc()
             print("⏳ Restarting in 5 minutes...")
-            await asyncio.sleep(300)  # Wait 5 minutes before retry
+            await asyncio.sleep(600)  # Wait 5 minutes before retry
 
 # ---------------------------
 # Start everything
